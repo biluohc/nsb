@@ -14,12 +14,12 @@ cargo install --git  https://github.com/biluohc/nsb
 
 */
 extern crate signalbool;
-use signalbool::SignalBool;
+use signalbool::{SignalBool, Signal, Flag};
 extern crate num_cpus;
 
 use std::thread::{sleep, spawn};
-use std::process::exit;
 use std::time::Duration;
+use std::process::exit;
 use std::env::args;
 
 
@@ -28,45 +28,39 @@ fn main() {
         println!("Usage:\n  nsb <Thread_number[Default: half of the number of CPUs]>");
         exit(1);
     };
+    let default = || {
+        let cpus = num_cpus::get();
+        if cpus < 2 { 1 } else { cpus / 2 }
+    };
 
     let thread_number = args()
         .nth(1)
         .and_then(|s| s.parse::<usize>().map_err(|_| help()).ok())
-        .unwrap_or_else(default_number);
-    let sb = SignalBool::new(&[signalbool::Signal::SIGINT], signalbool::Flag::Restart)
+        .unwrap_or_else(default);
+
+    let sb = SignalBool::new(&[Signal::SIGINT], Flag::Restart)
         .map_err(|e| eprintln!("Register Signal failed: {:?}", e))
         .unwrap();
 
-    loops(thread_number);
-
-    println!(
-        "nsb running on {} threads\nHit CTRL-C to stop the server",
-        thread_number
-    );
-    loop {
-        sleep(Duration::from_millis(1));
-        if sb.caught() {
-            break;
-        }
-    }
-}
-
-fn loops(number: usize) {
-    // if the loop is empty, process will been kill(Address boundary error), why?
-    (0..number).into_iter().for_each(|_| {
+    // if the loop is empty, process will crach(coredump), see more issue #1.
+    (0..thread_number).into_iter().for_each(|_| {
         let _ = spawn(move || loop {
             if args().count() > std::usize::MAX {
                 println!("{}", args().count());
             }
         });
-    })
-}
+    });
 
-fn default_number() -> usize {
-    let cpus = num_cpus::get();
-    if cpus < 2 {
-        1
-    } else {
-        cpus / 2
+    println!(
+        "nsb running on {} threads\nHit CTRL-C to stop the server",
+        thread_number
+    );
+    
+    // wait singal
+    loop {
+        sleep(Duration::from_millis(1));
+        if sb.caught() {
+            break;
+        }
     }
 }
