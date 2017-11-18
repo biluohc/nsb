@@ -25,7 +25,7 @@ use std::env::args;
 
 fn main() {
     let help = || {
-        println!("Usage:\n  nsb <Thread_number[Default: 1]>");
+        println!("Usage:\n  nsb <Thread_number[Default: half of the number of CPUs]>");
         exit(1);
     };
 
