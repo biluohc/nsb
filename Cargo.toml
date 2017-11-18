@@ -1,0 +1,8 @@
+[package]
+name = "nsb"
+version = "0.1.0"
+authors = ["biluohc <biluohc@qq.com>"]
+license = "BSD3"
+
+[dependencies]
+signalbool = "^0.2.0"
