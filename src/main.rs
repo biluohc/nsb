@@ -8,7 +8,7 @@ cargo install --git  https://github.com/biluohc/nsb
 ```
 
 ## 使用
-`nsb 死循环线程数量`, 默认是机器线程数目的一半.
+`hw 死循环线程数量`, 默认是机器线程数目的一半.
 
 ## Ps: 是不是要加个循环的频率(插入sleep)?
 
@@ -25,7 +25,7 @@ use std::env::args;
 
 fn main() {
     let help = || {
-        println!("Usage:\n  nsb <Thread_number[Default: half of the number of CPUs]>");
+        println!("Usage:\n  hw <Thread_number[Default: half of the number of CPUs]>");
         exit(1);
     };
     let default = || {
@@ -33,7 +33,7 @@ fn main() {
         if cpus < 2 { 1 } else { cpus / 2 }
     };
 
-    let thread_number = args()
+    let number = args()
         .nth(1)
         .and_then(|s| s.parse::<usize>().map_err(|_| help()).ok())
         .unwrap_or_else(default);
@@ -43,20 +43,20 @@ fn main() {
         .unwrap();
 
     // if the loop is empty, process will crach(coredump), see more issue #1.
-    (0..thread_number).into_iter().for_each(|_| {
+    for _ in 0..number {
         let _ = spawn(move || loop {
             if args().count() > std::usize::MAX {
                 println!("{}", args().count());
             }
         });
-    });
+    }
 
     println!(
-        "nsb running on {} threads\nHit CTRL-C to stop the server",
-        thread_number
+        "hw running on {} threads\nHit CTRL-C to stop the server",
+        number
     );
-    
-    // wait singal
+
+    // wait Ctrl+C singal
     loop {
         sleep(Duration::from_millis(1));
         if sb.caught() {
